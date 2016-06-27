@@ -9,7 +9,7 @@ public:
 	int x;
 	int y;
 	void func() { printf("AA1 %d %d\n", x, y); }
-	void func(int i){ printf("AA2 %d %d\n", x, y); }
+	void func(int i){ printf("AA2 %d %d %d\n", x, y, i); }
 };
 
 REF_CREATOR(0, AA)
@@ -32,6 +32,8 @@ int main()
 	ref->Invoke<void, int>("AA", "func1", unsigned int(a1), true, 200);
 	int y = ref->GetVar<int>("AA", "y", unsigned int(a1));
 	printf("y %d\n", y);
+
+	Reflection::Release();
 
 	return 0;
 }

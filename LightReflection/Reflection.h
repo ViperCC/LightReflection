@@ -24,6 +24,10 @@ private:
 	typedef std::unordered_map<std::string, RefData> ClassMap;
 	ClassMap classMap;
 
+private:
+	Reflection() = default;
+	~Reflection(){}
+
 public:
 	static Reflection* CreateInstance()
 	{
