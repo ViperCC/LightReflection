@@ -5,9 +5,10 @@ class AA
 public:
 	AA(){ printf("AA\n"); }
 	AA(int i){ printf("AA %d\n", i); }
+	~AA() { printf("delete %d %d\n", x, y); }
 
-	int x;
-	int y;
+	int x = 0;
+	int y = 0;
 	void func() { printf("AA1 %d %d\n", x, y); }
 	void func(int i){ printf("AA2 %d %d %d\n", x, y, i); }
 };
@@ -33,7 +34,56 @@ int main()
 	int y = ref->GetVar<int>("AA", "y", unsigned int(a1));
 	printf("y %d\n", y);
 
+	ref->ReleaseObject("AA", unsigned int(a1));
+	ref->ReleaseObject("AA", unsigned int(a2));
+
 	Reflection::Release();
 
 	return 0;
 }
+
+
+
+/*#include <iostream>
+using namespace std;
+template <typename T>
+static void* Destruct()//得到T析构函数的地址并返回
+{
+	T *p;
+	goto getDesAddr;
+desAddr:
+	p->~T();
+#ifdef _WIN32 //_MSC_VER //intel格式汇编,windows 平台
+#ifdef _MSC_VER
+	__asm{
+		ret
+		getDesAddr :
+		push eax
+			mov eax, desAddr //save the address of T::~T()
+			mov p, eax
+			pop eax
+	}
+#endif
+#endif
+	return (p);
+}
+
+typedef void(*Fndes)();
+static void executeDestruct(void *addr)//执行addr指向的析构函数
+{
+	Fndes exe = reinterpret_cast<Fndes>(addr);
+	exe();
+}
+
+
+class A{
+public:
+	~A(){
+		cout << "~A" << endl;
+	}
+};
+void main()
+{
+	void*p = Destruct<A>();
+	executeDestruct(p);
+}*/

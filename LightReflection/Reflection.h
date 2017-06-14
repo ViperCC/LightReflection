@@ -17,6 +17,7 @@ private:
 	
 	struct RefData { 
 		CreatorMap creator;
+		unsigned int destructor;
 		AddrMap memberVar;
 		AddrMap memberMethod;
 	};
@@ -62,6 +63,13 @@ public:
 		}
 	}
 
+	void RegisterDestructor(const char* className, unsigned int addr)
+	{
+		RefData& data = classMap[className];
+		unsigned int dm = addr;
+		data.destructor = dm;
+	}
+
 	void RegisterMemberVariable(const char* className, const char* memberName, unsigned int addr)
 	{
 		if (classMap.count(className) != 0)
@@ -89,7 +97,7 @@ public:
 	}
 
 	template<class... Args>
-	void* CreateClassByAddr(unsigned int addr, Args... args)
+	void* InvokeByAddr(unsigned int addr, Args... args)
 	{
 		return (*(void*(*)(Args...))addr)(args...);
 	}
@@ -101,7 +109,7 @@ public:
 			return NULL;
 		
 		unsigned int addr = GetCreatorAddr(className, sizeof...(args));
-		return CreateClassByAddr(addr, args...);
+		return InvokeByAddr(addr, args...);
 	}
 
 	unsigned int GetVarAddr(const char* className, const char* varName)
@@ -177,6 +185,15 @@ public:
 	{
 		unsigned int addr = GetMethodAddr(className, methodName);
 		return InvokeByAddr<RV, Args...>(addr, objectAddr, is_stdcall, args...);
+	}
+
+	void ReleaseObject(const char* className, unsigned int objectAddr)
+	{
+		if (classMap.count(className) != 0)
+		{
+			RefData& data = classMap[className];
+			InvokeByAddr(data.destructor, objectAddr);
+		}
 	}
 };
 Reflection* Reflection::instance = NULL;
