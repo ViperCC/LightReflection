@@ -4,19 +4,20 @@
 template<class... Args>
 using CREATOR_FUNC = void*(*)(Args...);
 
-template<class... Args>
-union CreatorUnion
+template<class T, class... Args>
+union FuncAddrUnion
 {
 	unsigned int addr;
-	void*(*func)(Args...);
+	T(*func)(Args...);
 };
 
-template<class T>
-union DestructorUnion
+template<class T, class... Args>
+unsigned int FuncToAddr(T(*func)(Args...))
 {
-	unsigned int addr;
-	void(*func)(void*);
-};
+	FuncAddrUnion<T, Args...> fau;
+	fau.func = func;
+	return fau.addr;
+}
 
 template<class T>
 void ClassReleaseFunc(void* p)
@@ -30,15 +31,11 @@ void ClassReleaseFunc(void* p)
 	{ \
 		return new class_type(args...); \
 	} \
-	CreatorUnion<__VA_ARGS__> class_type##params_count##union; \
 	class Create##class_type##params_count##ForFuncAddr { \
 		public: Create##class_type##params_count##ForFuncAddr() {  \
-					class_type##params_count##union.func = Create##class_type##params_count; \
 					Reflection* ref = Reflection::CreateInstance(); \
-					ref->RegisterConstructor(#class_type, class_type##params_count##union.addr, params_count); \
-					DestructorUnion<class_type> du; \
-					du.func = ClassReleaseFunc<class_type>; \
-					ref->RegisterDestructor(#class_type, du.addr); \
+					ref->RegisterConstructor(#class_type, FuncToAddr<void*, __VA_ARGS__>(Create##class_type##params_count), params_count); \
+					ref->RegisterDestructor(#class_type, FuncToAddr<void, void*>(ClassReleaseFunc<class_type>)); \
 		} \
 	}; \
 	Create##class_type##params_count##ForFuncAddr* Create##class_type##params_count##ForFuncAddr##Object = new Create##class_type##params_count##ForFuncAddr();
