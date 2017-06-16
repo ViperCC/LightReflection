@@ -21,7 +21,6 @@ REF_METHOD(AA,
 	METHOD_ADDR(1, AA, func, void, int)
 )
 
-
 int main()
 {
 	Reflection* ref = Reflection::CreateInstance();
@@ -31,7 +30,7 @@ int main()
 	ref->SetVar("AA", "x", unsigned int(a1), 123);
 	ref->SetVar("AA", "y", unsigned int(a1), 456);
 	ref->Invoke<void>("AA", "func", unsigned int(a1), true);
-	ref->Invoke<void, int>("AA", "func", unsigned int(a1), true, 200);
+	ref->Invoke<void>("AA", "func", unsigned int(a1), true, 200);
 	int y = ref->GetVar<int>("AA", "y", unsigned int(a1));
 	printf("y %d\n", y);
 
