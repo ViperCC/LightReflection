@@ -13,13 +13,14 @@ private:
 	static Reflection* instance;
 	// 变量/函数名，地址
 	typedef std::unordered_map<std::string, unsigned int> AddrMap;
-	typedef std::unordered_map<int, unsigned int> CreatorMap;
+	typedef std::unordered_map<int, unsigned int> NumMap;
+	typedef std::unordered_map<std::string, NumMap> MethodMap;
 	
 	struct RefData { 
-		CreatorMap creator;
+		NumMap creator;
 		unsigned int destructor;
 		AddrMap memberVar;
-		AddrMap memberMethod;
+		MethodMap memberMethod;
 	};
 	// 类名，creator地址，成员变量地址，成员函数地址
 	typedef std::unordered_map<std::string, RefData> ClassMap;
@@ -46,9 +47,10 @@ public:
 	{
 		if (classMap.count(className) == 0)
 		{
-			CreatorMap cm;
+			NumMap cm;
 			cm[paramsCount] = addr;
-			AddrMap m1, m2;
+			AddrMap m1;
+			MethodMap m2;
 			RefData data;
 			data.creator = std::move(cm);
 			data.memberVar = std::move(m1);
@@ -58,7 +60,7 @@ public:
 		else
 		{
 			RefData& data = classMap[className];
-			CreatorMap& cm = data.creator;
+			NumMap& cm = data.creator;
 			cm[paramsCount] = addr;
 		}
 	}
@@ -78,11 +80,22 @@ public:
 		}
 	}
 
-	void RegisterMemberMethod(const char* className, const char* memberName, unsigned int addr)
+	void RegisterMemberMethod(const char* className, const char* memberName, unsigned int addr, int paramsCount)
 	{
 		if (classMap.count(className) != 0)
 		{
-			classMap[className].memberMethod.insert(std::pair<std::string, unsigned int>(memberName, addr));
+			MethodMap& mm = classMap[className].memberMethod;
+			if (mm.count(memberName) != 0)
+			{
+				NumMap& nm = mm[memberName];
+				nm[paramsCount] = addr;
+			}
+			else
+			{
+				NumMap nm;
+				nm[paramsCount] = addr;
+				mm[memberName] = std::move(nm);
+			}
 		}
 	}
 
@@ -90,7 +103,7 @@ public:
 	{
 		if (classMap.count(className) == 0)
 			return 0;
-		CreatorMap& cm = classMap[className].creator;
+		NumMap& cm = classMap[className].creator;
 		if (cm.count(paramsCount) != 0)
 			return cm[paramsCount];
 		return 0;
@@ -153,14 +166,20 @@ public:
 		return GetVarByAddr<RV>(addr, objectAddr);
 	}
 
-	unsigned int GetMethodAddr(const char* className, const char* methodName)
+	unsigned int GetMethodAddr(const char* className, const char* methodName, unsigned int paramsCount)
 	{
 		if (classMap.count(className) == 0)
 			return 0;
 
-		AddrMap& addrMap = classMap[className].memberMethod;
-		if (addrMap.count(methodName))
-			return addrMap[methodName];
+		MethodMap& mm = classMap[className].memberMethod;
+		if (mm.count(methodName) != 0)
+		{
+			NumMap& nm = mm[methodName];
+			if (nm.count(paramsCount) != 0)
+			{
+				return nm[paramsCount];
+			}
+		}
 
 		return 0;
 	}
@@ -183,7 +202,8 @@ public:
 	template <class RV, class... Args>
 	RV Invoke(const char* className, const char* methodName, unsigned int objectAddr, bool is_stdcall, Args... args)
 	{
-		unsigned int addr = GetMethodAddr(className, methodName);
+		unsigned int addr = GetMethodAddr(className, methodName, sizeof...(args));
+		
 		return InvokeByAddr<RV, Args...>(addr, objectAddr, is_stdcall, args...);
 	}
 

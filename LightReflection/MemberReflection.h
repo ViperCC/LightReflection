@@ -7,7 +7,8 @@ struct RefStruct
 {
 	const char* name;
 	unsigned int addr;
-	RefStruct(const char* _name, unsigned int _addr) : name(_name), addr(_addr){}
+	unsigned int addition;
+	RefStruct(const char* _name, unsigned int _addr, unsigned int _addition = 0) : name(_name), addr(_addr), addition(_addition){}
 };
 
 #define VAR_ADDR(class_type, var) \
@@ -64,8 +65,8 @@ unsigned int GetFuncAddr(RV(* f)())
 	return addr.addr;
 }
 
-#define METHOD_ADDR(class_type, method, rv, ...) \
-	GetFuncAddr<class_type, rv, __VA_ARGS__>(&class_type::method)
+#define METHOD_ADDR(params_count, class_type, method, rv, ...) \
+	RefStruct(#method, GetFuncAddr<class_type, rv, __VA_ARGS__>(&class_type::method), params_count)	
 
 #define REF_METHOD(class_type, ...) \
 	RefStruct class_type##memberMethodArray[] = { __VA_ARGS__, RefStruct("\0", 0) }; \
@@ -73,7 +74,7 @@ unsigned int GetFuncAddr(RV(* f)())
 		public: RefMethod##class_type##ForMethodAddr() { \
 			RefStruct* p = class_type##memberMethodArray; \
 			for (p; strcmp(p->name, "\0"); p++) {\
-				Reflection::CreateInstance()->RegisterMemberMethod(#class_type, p->name, p->addr); }\
+				Reflection::CreateInstance()->RegisterMemberMethod(#class_type, p->name, p->addr, p->addition); }\
 		}\
 	}; \
 	RefMethod##class_type##ForMethodAddr* RefMethod##class_type##ForMethodAddrObject = new RefMethod##class_type##ForMethodAddr();

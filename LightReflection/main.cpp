@@ -17,9 +17,10 @@ REF_CREATOR(0, AA)
 REF_CREATOR(1, AA, int)
 REF_VAR(AA, VAR_ADDR(AA, x), VAR_ADDR(AA, y))
 REF_METHOD(AA,
-RefStruct("func", METHOD_ADDR(AA, func, void)),
-RefStruct("func1", METHOD_ADDR(AA, func, void, int))
+	METHOD_ADDR(0, AA, func, void),
+	METHOD_ADDR(1, AA, func, void, int)
 )
+
 
 int main()
 {
@@ -30,7 +31,7 @@ int main()
 	ref->SetVar("AA", "x", unsigned int(a1), 123);
 	ref->SetVar("AA", "y", unsigned int(a1), 456);
 	ref->Invoke<void>("AA", "func", unsigned int(a1), true);
-	ref->Invoke<void, int>("AA", "func1", unsigned int(a1), true, 200);
+	ref->Invoke<void, int>("AA", "func", unsigned int(a1), true, 200);
 	int y = ref->GetVar<int>("AA", "y", unsigned int(a1));
 	printf("y %d\n", y);
 
